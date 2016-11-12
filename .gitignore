@@ -1,0 +1,7 @@
+pxpacker/obj/*
+pxpacker/bin/*
+.vs/*
+.directory
+*.userprefs
+packages/*
+*.csproj.user
