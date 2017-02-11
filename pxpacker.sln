@@ -3,6 +3,8 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "pxpacker", "pxpacker\pxpacker.csproj", "{8BB47FB8-4A2C-4CA3-AB21-CFDAA82A7EE2}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PearXLib", "..\PearXLib\PearXLib\PearXLib.csproj", "{4176C1E5-6FF0-44C1-B659-C248B6A743CF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -13,5 +15,9 @@ Global
 		{8BB47FB8-4A2C-4CA3-AB21-CFDAA82A7EE2}.Debug|x86.Build.0 = Debug|x86
 		{8BB47FB8-4A2C-4CA3-AB21-CFDAA82A7EE2}.Release|x86.ActiveCfg = Release|x86
 		{8BB47FB8-4A2C-4CA3-AB21-CFDAA82A7EE2}.Release|x86.Build.0 = Release|x86
+		{4176C1E5-6FF0-44C1-B659-C248B6A743CF}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{4176C1E5-6FF0-44C1-B659-C248B6A743CF}.Debug|x86.Build.0 = Debug|Any CPU
+		{4176C1E5-6FF0-44C1-B659-C248B6A743CF}.Release|x86.ActiveCfg = Release|Any CPU
+		{4176C1E5-6FF0-44C1-B659-C248B6A743CF}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

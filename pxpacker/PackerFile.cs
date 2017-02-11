@@ -1,12 +1,8 @@
-﻿using System;
-namespace pxpacker
+﻿namespace pxpacker
 {
 	public class PackerFile
 	{
-		public string Name { get; set; }
-		public string NameForArchives { get; set; }
-		public string MainExe { get; set; }
-		public string Icon { get; set; }
-		public bool EmbedMono { get; set; }
+		public string Full { get; set; }
+		public string File { get; set; }
 	}
 }

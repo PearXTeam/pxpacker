@@ -33,20 +33,29 @@
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="PearXLib">
-      <HintPath>..\packages\PearXLib.1.2.7.1\lib\net40\PearXLib.dll</HintPath>
-    </Reference>
     <Reference Include="DotNetZip">
       <HintPath>..\packages\DotNetZip.1.10.1\lib\net20\DotNetZip.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PackerConfig.cs" />
+    <Compile Include="PackerShortcut.cs" />
+    <Compile Include="PackerUtils.cs" />
+    <Compile Include="OS.cs" />
+    <Compile Include="Architecture.cs" />
+    <Compile Include="Vars.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="PackerFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\PearXLib\PearXLib\PearXLib.csproj">
+      <Project>{4176C1E5-6FF0-44C1-B659-C248B6A743CF}</Project>
+      <Name>PearXLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

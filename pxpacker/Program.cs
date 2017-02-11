@@ -1,86 +1,92 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text;
+using Ionic.Zip;
 using Newtonsoft.Json;
 using PearXLib;
-using Ionic.Zip;
-using System.Linq;
 
 namespace pxpacker
 {
-	class MainClass
+	public class Program
 	{
+		public static string Usage => "Usage: pxpacker <root> [--nopacman] [--nowindows] [--nozip]";
+
 		public static void Main(string[] args)
 		{
-			string usage = "Usage: 'pxpacker pack <pxpacker root>' or 'pxpacker createroot'";
-			if (args.Length < 1)
+			if (args.Length > 0)
 			{
-				Console.WriteLine(usage);
-				Environment.Exit(-1);
-			}
-			if (args[0] == "pack")
-			{
-				if (args.Length < 2)
-				{
-					Console.WriteLine(usage);
-					Environment.Exit(-1);
-				}
-				string path = args[1];
-				string pathJson = Path.Combine(path, "pxpacker.json");
-				string pathOut = Path.Combine(path, "out");
+				string path = Path.GetFullPath(args[0]);
 				string pathFiles = Path.Combine(path, "files");
+				string pathOut = Path.Combine(path, "output");
 				string pathTemp = Path.Combine(path, "temp");
-				if (Directory.Exists(path))
-				{
-					if (File.Exists(pathJson) && Directory.Exists(pathOut) && Directory.Exists(pathFiles))
-					{
-						PackerFile f = JsonConvert.DeserializeObject<PackerFile>(File.ReadAllText(pathJson));
+				var cfg = JsonConvert.DeserializeObject<PackerConfig>(File.ReadAllText(Path.Combine(path, "config.json")));
 
-						Directory.CreateDirectory(pathTemp);
-						if (!args.Contains("--nozip"))
+				if (!args.Contains("--nozip"))
+				{
+					foreach (OS os in Enum.GetValues(typeof(OS)))
+					{
+						foreach (Architecture arch in Enum.GetValues(typeof(Architecture)))
 						{
-							Console.WriteLine("Creating .ZIP archive...");
-							string pathZip = Path.Combine(pathOut, f.NameForArchives + ".zip");
-							File.Delete(pathZip);
-							using (ZipFile zip = new ZipFile(pathZip))
+							Console.WriteLine($"Packing .ZIP archive for {os} {arch}.");
+							var files = PackerUtils.GetFiles(pathFiles, os, arch);
+							using (ZipFile zip = new ZipFile(Path.Combine(pathOut, cfg.CodeName + "_" + cfg.Version + "_" + os + "_" + arch + ".zip")))
 							{
-								foreach (string file in FileUtils.GetFilesInDir(pathFiles))
-								{
-									Console.WriteLine($"Adding {file} file...");
-									string rel = TextUtils.GetRelativeString(file, pathFiles, true);
-									string dir = Path.GetDirectoryName(rel);
-									zip.AddFile(file, dir);
-								}
+								foreach (var v in files)
+									zip.AddFile(v.Full, Path.GetDirectoryName(v.File));
 								zip.Save();
 							}
 						}
 					}
-					else
+				}
+				if (!args.Contains("--nopacman"))
+				{
+					foreach (Architecture arch in Enum.GetValues(typeof(Architecture)))
 					{
-						Console.WriteLine("Root directory not setted up!");
-						Environment.Exit(-1);
+						string pathPacman = Path.Combine(pathTemp, "pacman_" + arch.ToString());
+						Directory.CreateDirectory(pathPacman);
+						StringBuilder pb = new StringBuilder();
+						pb.AppendLine("# Maintainer:  " + cfg.MaintainerEmail);
+						pb.AppendLine($"pkgname='{cfg.CodeName}'");
+						pb.AppendLine($"pkgver='{cfg.Version}'");
+						pb.AppendLine($"pkgrel=1");
+						pb.AppendLine($"pkgdesc='{cfg.Description}'");
+						pb.AppendLine($"url='{cfg.URL}'");
+						pb.AppendLine($"arch=('any')");
+						pb.AppendLine($"license=( '{cfg.License}' )");
+						pb.AppendLine("depends=(");
+						foreach (string s in cfg.PacmanDependencies)
+							pb.Append($" '{s}' ");
+						pb.AppendLine(")");
+						pb.AppendLine("package() {  ");
+						foreach (var f in PackerUtils.GetFiles(pathFiles, OS.Linux, arch))
+						{
+							pb.AppendLine("mkdir -p ${pkgdir}'/usr/share/" + cfg.CodeName + "/" + Path.GetDirectoryName(f.File) + "'");
+							pb.AppendLine("cp '" + f.Full + "' ${pkgdir}'/usr/share/" + cfg.CodeName + "/" + f.File + "'");
+						}
+						pb.AppendLine("mkdir -p ${pkgdir}'/usr/share/applications'");
+						foreach (var f in cfg.Shortcuts)
+						{
+							var sc = Path.Combine(pathPacman, f.DisplayName + ".desktop");
+							pb.AppendLine("cp '" + sc + "' ${pkgdir}'/usr/share/applications/" + f.DisplayName + ".desktop" + "'");
+							PXL.CreateShortcut($"/usr/share/{cfg.CodeName}/" + f.Executable, f.Arguments, pathPacman, f.DisplayName, f.GenericName, $"/usr/share/{cfg.CodeName}/" + f.LinuxIcon);
+						}
+						pb.Append("}");
+						File.WriteAllText(Path.Combine(pathPacman, "PKGBUILD"), pb.ToString());
+						ProcessStartInfo inf = new ProcessStartInfo("makepkg");
+						inf.WorkingDirectory = pathPacman;
+						Process proc = Process.Start(inf);
+						proc.WaitForExit();
+						string name = cfg.CodeName + "-" + cfg.Version + "-1-any.pkg.tar.xz";
+						File.Move(Path.Combine(pathPacman, name), Path.Combine(pathOut, cfg.CodeName + "_" + cfg.Version + "_" + arch + ".pkg.tar.xz"));
 					}
 				}
-				else
-				{
-					Console.WriteLine("Directory not found.");
-					Environment.Exit(-1);
-				}
+				Directory.Delete(pathTemp, true);
+				Console.WriteLine("Done!");
+				return;
 			}
-			else if (args[1] == "createroot")
-			{
-				string dir = "pxpacker_example_root";
-				Directory.CreateDirectory(dir + "/out");
-				Directory.CreateDirectory(dir + "/files");
-				File.WriteAllText(dir + "/pxpacker.json", JsonConvert.SerializeObject(new PackerFile
-				{
-					Name = "My Program",
-					NameForArchives = "MyProgram",
-					MainExe = "program.exe",
-					Icon = "icon.png",
-					EmbedMono = false
-				}, Formatting.Indented));
-				Console.WriteLine("OK!");
-			}
+			Console.WriteLine(Usage);
 		}
 	}
 }
