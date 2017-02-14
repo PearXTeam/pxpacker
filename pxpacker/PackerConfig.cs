@@ -10,6 +10,8 @@ namespace pxpacker
 		public string MaintainerEmail { get; set; }
 		public string URL { get; set; }
 		public string License { get; set; }
+		public string IconFile { get; set; }
+		public string Company { get; set; }
 		public string[] PacmanDependencies { get; set; }
 		public PackerShortcut[] Shortcuts { get; set; }
 	}

@@ -44,6 +44,7 @@ namespace pxpacker
 				{
 					foreach (Architecture arch in Enum.GetValues(typeof(Architecture)))
 					{
+						Console.WriteLine($"Creating pacman package for {arch}.");
 						string pathPacman = Path.Combine(pathTemp, "pacman_" + arch.ToString());
 						Directory.CreateDirectory(pathPacman);
 						StringBuilder pb = new StringBuilder();
@@ -80,6 +81,52 @@ namespace pxpacker
 						proc.WaitForExit();
 						string name = cfg.CodeName + "-" + cfg.Version + "-1-any.pkg.tar.xz";
 						File.Move(Path.Combine(pathPacman, name), Path.Combine(pathOut, cfg.CodeName + "_" + cfg.Version + "_" + arch + ".pkg.tar.xz"));
+					}
+				}
+				if (!args.Contains("--nowindows"))
+				{
+					foreach (Architecture arch in Enum.GetValues(typeof(Architecture)))
+					{
+						Console.WriteLine($"Creating Windows installer for {arch}...");
+						string pathNsis = Path.Combine(pathTemp, "windows_" + arch.ToString());
+						Directory.CreateDirectory(pathNsis);
+						string nsis = Encoding.UTF8.GetString(ResourceUtils.GetFromResources("pxpacker.script.nsi"));
+						long sz = 0;
+						string fIcon = "";
+						foreach (var f in PackerUtils.GetFiles(pathFiles, OS.Windows, arch))
+						{
+							if (f.File == cfg.IconFile)
+								fIcon = f.Full;
+							sz += new FileInfo(f.Full).Length / 1024;
+						}
+						StringBuilder fls = new StringBuilder();
+						foreach (var f in PackerUtils.GetFiles(pathFiles, OS.Windows, arch))
+						{
+							fls.AppendLine(@"SetOutPath ""$INSTDIR\" + Path.GetDirectoryName(f.File).Replace('/', '\\') + @"""");
+							fls.AppendLine(@"File """ + f.Full + @"""");
+						}
+						StringBuilder scs = new StringBuilder();
+						foreach (var sc in cfg.Shortcuts)
+						{
+							scs.AppendLine(@"CreateShortCut ""$DESKTOP\" + sc.DisplayName + @".lnk"" ""$INSTDIR\" + sc.Executable.Replace('/', '\\') + @""" """ + sc.Arguments + @""" ""$INSTDIR\"  + sc.Executable.Replace('/', '\\') + @""" 0");
+						}
+
+						File.WriteAllText(Path.Combine(pathNsis, "script.nsis"), nsis
+										  .Replace("$pxpName", cfg.FriendlyName)
+										  .Replace("$pxpSize", sz.ToString())
+										  .Replace("$pxpIcon", cfg.IconFile)
+										  .Replace("$pxpCompany", cfg.Company)
+										  .Replace("$pxpUrl", cfg.URL)
+										  .Replace("$pxpVer", cfg.Version)
+										  .Replace("$pxpOut", Path.Combine(pathOut, cfg.CodeName + "_" + cfg.Version + "_" + arch.ToString() + ".exe"))
+										  .Replace("$pxpFiles", fls.ToString())
+										  .Replace("$pxpShortcuts", scs.ToString())
+										  .Replace("$pxpFullIcon", fIcon)
+										 );
+						ProcessStartInfo inf = new ProcessStartInfo("makensis", "script.nsis");
+						inf.WorkingDirectory = pathNsis;
+						Process proc = Process.Start(inf);
+						proc.WaitForExit();
 					}
 				}
 				Directory.Delete(pathTemp, true);
